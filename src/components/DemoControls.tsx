@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useChronos } from '../store/ChronosContext'
+import { useMandate } from '../store/MandateContext'
 
 export function DemoControls() {
-  const { demo, setDemo } = useChronos()
+  const { demo, setDemo } = useMandate()
   const [open, setOpen] = useState(false)
 
   return (

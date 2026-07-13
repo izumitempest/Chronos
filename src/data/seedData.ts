@@ -1,7 +1,7 @@
 import type {
   ActivityEntry,
   AttendanceRecord,
-  ChronosState,
+  MandateState,
   ClassInstance,
   ClassTimeProposal,
   Enrollment,
@@ -268,7 +268,7 @@ export function computeThresholdSummaries(
   }).filter((s) => s.totalEnrolled > 0)
 }
 
-export function createInitialState(role: keyof typeof users = 'student'): ChronosState {
+export function createInitialState(role: keyof typeof users = 'student'): MandateState {
   return {
     currentUser: users[role],
     classInstances,

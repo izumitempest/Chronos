@@ -1,10 +1,10 @@
-interface ChronosMarkProps {
+interface MandateMarkProps {
   className?: string
   size?: number
 }
 
 /** Quiet arc mark — time, not security */
-export function ChronosMark({ className = '', size = 20 }: ChronosMarkProps) {
+export function MandateMark({ className = '', size = 20 }: MandateMarkProps) {
   return (
     <svg
       width={size}

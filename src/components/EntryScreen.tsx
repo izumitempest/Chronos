@@ -1,5 +1,5 @@
-import { useChronos } from '../store/ChronosContext'
-import { ChronosMark } from './ChronosMark'
+import { useMandate } from '../store/MandateContext'
+import { MandateMark } from './MandateMark'
 import type { Role } from '../data/types'
 
 const roles: { role: Role; label: string; description: string }[] = [
@@ -21,18 +21,18 @@ const roles: { role: Role; label: string; description: string }[] = [
 ]
 
 export function EntryScreen() {
-  const { switchRole } = useChronos()
+  const { switchRole } = useMandate()
 
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-16">
       <div className="mx-auto w-full max-w-lg">
         <div className="mb-10 flex items-center gap-3">
-          <ChronosMark size={28} className="text-accent" />
+          <MandateMark size={28} className="text-accent" />
           <span className="text-sm text-ink-faint">Godfrey Okoye University</span>
         </div>
 
         <h1 className="mb-4 text-[2.5rem] font-medium leading-[1.1] tracking-tight text-ink">
-          Chronos
+          Mandate
         </h1>
         <p className="mb-14 max-w-md text-balance text-[15px] leading-relaxed text-ink-muted">
           Location-verified attendance for real campus conditions — patchy Wi-Fi,

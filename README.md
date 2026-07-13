@@ -1,4 +1,4 @@
-# Chronos
+# Mandate
 
 Location-verified attendance for Nigerian universities — a hackathon prototype for Wema Bank's Hackoholics 7.0, piloted at Godfrey Okoye University.
 

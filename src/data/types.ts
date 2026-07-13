@@ -84,7 +84,7 @@ export interface StudentCourseAttendance {
   history: AttendanceRecord[]
 }
 
-export interface ChronosState {
+export interface MandateState {
   currentUser: User
   classInstances: ClassInstance[]
   enrollments: Record<string, Enrollment[]>

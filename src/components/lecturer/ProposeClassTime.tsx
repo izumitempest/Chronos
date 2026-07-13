@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useChronos } from '../../store/ChronosContext'
+import { useMandate } from '../../store/MandateContext'
 import { COURSES } from '../../data/seedData'
 
 export function ProposeClassTime() {
-  const { proposeClassTime } = useChronos()
+  const { proposeClassTime } = useMandate()
   const [courseCode, setCourseCode] = useState('CSC 401')
   const [day, setDay] = useState('Thursday')
   const [time, setTime] = useState('11:00 AM')

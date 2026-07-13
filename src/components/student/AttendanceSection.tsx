@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useChronos, NUC_THRESHOLD } from '../../store/ChronosContext'
+import { useMandate, NUC_THRESHOLD } from '../../store/MandateContext'
 import { formatDateWAT, formatTimeWAT } from '../../utils/format'
 import type { AttendanceRecord } from '../../data/types'
 
@@ -10,7 +10,7 @@ interface DisputePanelProps {
 }
 
 export function DisputePanel({ record, onClose, onSubmitted }: DisputePanelProps) {
-  const { disputeRecord } = useChronos()
+  const { disputeRecord } = useMandate()
   const [reason, setReason] = useState('')
   const [submitted, setSubmitted] = useState(false)
 

@@ -1,4 +1,4 @@
-import { ChronosProvider, useChronos } from './store/ChronosContext'
+import { MandateProvider, useMandate } from './store/MandateContext'
 import { EntryScreen } from './components/EntryScreen'
 import { DemoControls } from './components/DemoControls'
 import { StudentView } from './components/student/StudentView'
@@ -6,7 +6,7 @@ import { LecturerView } from './components/lecturer/LecturerView'
 import { AdminView } from './components/admin/AdminView'
 
 function AppContent() {
-  const { isAtHome, state } = useChronos()
+  const { isAtHome, state } = useMandate()
 
   if (isAtHome) {
     return <EntryScreen />
@@ -24,9 +24,9 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ChronosProvider>
+    <MandateProvider>
       <AppContent />
       <DemoControls />
-    </ChronosProvider>
+    </MandateProvider>
   )
 }

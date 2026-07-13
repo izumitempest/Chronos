@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useChronos } from '../../store/ChronosContext'
+import { useMandate } from '../../store/MandateContext'
 import type { Enrollment } from '../../data/types'
 
 type RosterStatus = 'waiting' | 'present' | 'unconfirmed' | 'manual'
@@ -15,7 +15,7 @@ interface LiveRosterProps {
 }
 
 export function LiveRoster({ courseCode, classInstanceId }: LiveRosterProps) {
-  const { state, demo, markPresentManually } = useChronos()
+  const { state, demo, markPresentManually } = useMandate()
   const [roster, setRoster] = useState<RosterEntry[]>([])
   const initialized = useRef(false)
 

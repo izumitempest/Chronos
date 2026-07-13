@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { useChronos } from '../store/ChronosContext'
-import { ChronosMark } from './ChronosMark'
+import { useMandate } from '../store/MandateContext'
+import { MandateMark } from './MandateMark'
 import type { Role } from '../data/types'
 
 interface LayoutProps {
@@ -15,7 +15,7 @@ const roleLabels: Record<Role, string> = {
 }
 
 export function Layout({ children, title }: LayoutProps) {
-  const { state, goHome } = useChronos()
+  const { state, goHome } = useMandate()
   const user = state.currentUser
 
   return (
@@ -26,8 +26,8 @@ export function Layout({ children, title }: LayoutProps) {
           onClick={goHome}
           className="flex items-center gap-2 text-ink-muted transition-colors hover:text-ink"
         >
-          <ChronosMark size={18} className="text-accent" />
-          <span className="text-sm font-medium">Chronos</span>
+          <MandateMark size={18} className="text-accent" />
+          <span className="text-sm font-medium">Mandate</span>
         </button>
         <div className="flex items-center gap-4">
           <span className="hidden rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent sm:inline">

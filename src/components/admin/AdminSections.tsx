@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useChronos } from '../../store/ChronosContext'
+import { useMandate } from '../../store/MandateContext'
 import { formatDateWAT } from '../../utils/format'
 
 export function ApprovalsList() {
-  const { state, approveProposal, declineProposal } = useChronos()
+  const { state, approveProposal, declineProposal } = useMandate()
   const pending = state.classTimeProposals.filter((p) => p.status === 'pending')
 
   if (pending.length === 0) {
@@ -44,7 +44,7 @@ export function ApprovalsList() {
 }
 
 export function FlaggedRecords() {
-  const { state, resolveDispute } = useChronos()
+  const { state, resolveDispute } = useMandate()
   const [resolvingId, setResolvingId] = useState<string | null>(null)
   const [note, setNote] = useState('')
 
@@ -119,7 +119,7 @@ export function FlaggedRecords() {
 }
 
 export function ActivityLog() {
-  const { state } = useChronos()
+  const { state } = useMandate()
 
   return (
     <ul className="space-y-2">

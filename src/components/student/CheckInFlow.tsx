@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useChronos } from '../../store/ChronosContext'
+import { useMandate } from '../../store/MandateContext'
 import { formatTimeWAT } from '../../utils/format'
 import type { AttendanceRecord } from '../../data/types'
 
@@ -12,7 +12,7 @@ interface CheckInFlowProps {
 }
 
 export function CheckInFlow({ classInstanceId, courseCode, onComplete }: CheckInFlowProps) {
-  const { checkIn } = useChronos()
+  const { checkIn } = useMandate()
   const [phase, setPhase] = useState<CheckInPhase>('idle')
   const [result, setResult] = useState<AttendanceRecord | null>(null)
 

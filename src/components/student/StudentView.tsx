@@ -6,7 +6,7 @@ import {
   CourseAttendanceCard,
   DisputePanel,
 } from './AttendanceSection'
-import { useChronos } from '../../store/ChronosContext'
+import { useMandate } from '../../store/MandateContext'
 import {
   classStartsIn,
   formatClassTime,
@@ -16,7 +16,7 @@ import {
 import type { AttendanceRecord } from '../../data/types'
 
 export function StudentView() {
-  const { state, manualCheckIn, getStudentRecords, getCourseAttendance } = useChronos()
+  const { state, manualCheckIn, getStudentRecords, getCourseAttendance } = useMandate()
   const [checkedIn, setCheckedIn] = useState(false)
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null)
   const [disputingToday, setDisputingToday] = useState(false)

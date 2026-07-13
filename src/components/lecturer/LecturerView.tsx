@@ -1,11 +1,11 @@
 import { Layout } from '../Layout'
 import { LiveRoster } from './LiveRoster'
 import { ProposeClassTime } from './ProposeClassTime'
-import { useChronos } from '../../store/ChronosContext'
+import { useMandate } from '../../store/MandateContext'
 import { formatClassTime } from '../../utils/format'
 
 export function LecturerView() {
-  const { state } = useChronos()
+  const { state } = useMandate()
   const activeClass = state.classInstances.find((c) => c.status === 'active')
 
   return (

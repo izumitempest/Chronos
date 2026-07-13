@@ -14,7 +14,7 @@ import {
 } from '../data/seedData'
 import type {
   AttendanceRecord,
-  ChronosState,
+  MandateState,
   DemoSettings,
   Role,
   ThresholdSummary,
@@ -22,8 +22,8 @@ import type {
 } from '../data/types'
 import { uid } from '../utils/format'
 
-interface ChronosContextValue {
-  state: ChronosState
+interface MandateContextValue {
+  state: MandateState
   thresholdSummaries: ThresholdSummary[]
   demo: DemoSettings
   setDemo: (settings: Partial<DemoSettings>) => void
@@ -42,10 +42,10 @@ interface ChronosContextValue {
   getCourseAttendance: (studentId: string) => { courseCode: string; courseTitle: string; percentage: number }[]
 }
 
-const ChronosContext = createContext<ChronosContextValue | null>(null)
+const MandateContext = createContext<MandateContextValue | null>(null)
 
-export function ChronosProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ChronosState>(createInitialState)
+export function MandateProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<MandateState>(createInitialState)
   const [isAtHome, setIsAtHome] = useState(true)
   const [demo, setDemoState] = useState<DemoSettings>({
     locationOutcome: 'verified',
@@ -293,7 +293,7 @@ export function ChronosProvider({ children }: { children: ReactNode }) {
     [state.enrollments, thresholdSummaries],
   )
 
-  const value: ChronosContextValue = {
+  const value: MandateContextValue = {
     state,
     thresholdSummaries,
     demo,
@@ -313,12 +313,12 @@ export function ChronosProvider({ children }: { children: ReactNode }) {
     getCourseAttendance,
   }
 
-  return <ChronosContext.Provider value={value}>{children}</ChronosContext.Provider>
+  return <MandateContext.Provider value={value}>{children}</MandateContext.Provider>
 }
 
-export function useChronos() {
-  const ctx = useContext(ChronosContext)
-  if (!ctx) throw new Error('useChronos must be used within ChronosProvider')
+export function useMandate() {
+  const ctx = useContext(MandateContext)
+  if (!ctx) throw new Error('useMandate must be used within MandateProvider')
   return ctx
 }
 

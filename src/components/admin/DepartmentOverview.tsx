@@ -1,4 +1,4 @@
-import { useChronos, NUC_THRESHOLD } from '../../store/ChronosContext'
+import { useMandate, NUC_THRESHOLD } from '../../store/MandateContext'
 import type { Enrollment, ThresholdSummary } from '../../data/types'
 
 interface CourseOverviewProps {
@@ -6,7 +6,7 @@ interface CourseOverviewProps {
 }
 
 export function CourseOverview({ onSelectCourse }: CourseOverviewProps) {
-  const { thresholdSummaries } = useChronos()
+  const { thresholdSummaries } = useMandate()
 
   return (
     <div className="space-y-5">
@@ -82,7 +82,7 @@ interface CourseDetailPanelProps {
 }
 
 export function CourseDetailPanel({ courseCode, onClose }: CourseDetailPanelProps) {
-  const { state, thresholdSummaries } = useChronos()
+  const { state, thresholdSummaries } = useMandate()
   const students = state.enrollments[courseCode] ?? []
   const summary = thresholdSummaries.find((s) => s.courseCode === courseCode)
 
