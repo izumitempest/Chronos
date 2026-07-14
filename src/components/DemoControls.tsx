@@ -16,12 +16,13 @@ export function DemoControls() {
             <select
               value={demo.locationOutcome}
               onChange={(e) =>
-                setDemo({ locationOutcome: e.target.value as 'verified' | 'unverified' })
+                setDemo({ locationOutcome: e.target.value as typeof demo.locationOutcome })
               }
               className="w-full rounded-lg bg-surface-raised px-3 py-2 text-sm text-ink outline-none ring-1 ring-ink/5"
             >
               <option value="verified">Location confirmed</option>
               <option value="unverified">Location unconfirmed</option>
+              <option value="manual_fail">Manual check-in fails</option>
             </select>
           </label>
 

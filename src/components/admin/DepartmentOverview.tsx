@@ -82,14 +82,14 @@ interface CourseDetailPanelProps {
 }
 
 export function CourseDetailPanel({ courseCode, onClose }: CourseDetailPanelProps) {
-  const { state, thresholdSummaries } = useMandate()
-  const students = state.enrollments[courseCode] ?? []
+  const { scopedEnrollments, thresholdSummaries, navigate } = useMandate()
+  const students = scopedEnrollments[courseCode] ?? []
   const summary = thresholdSummaries.find((s) => s.courseCode === courseCode)
 
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-ink/10 backdrop-blur-[1px]"
+        className="fixed inset-0 z-40 bg-ink/15 backdrop-blur-[1px]"
         onClick={onClose}
         aria-hidden
       />
@@ -98,9 +98,9 @@ export function CourseDetailPanel({ courseCode, onClose }: CourseDetailPanelProp
           <button
             type="button"
             onClick={onClose}
-            className="mb-6 text-sm text-ink-muted hover:text-ink"
+            className="mb-6 inline-flex rounded-xl bg-ink px-4 py-2.5 text-sm font-medium text-paper"
           >
-            Close
+            ← Close
           </button>
 
           <h2 className="mb-1 text-xl font-medium text-ink">{courseCode}</h2>
@@ -111,7 +111,15 @@ export function CourseDetailPanel({ courseCode, onClose }: CourseDetailPanelProp
 
           <ul className="space-y-2">
             {students.map((student) => (
-              <StudentRow key={student.studentId} student={student} />
+              <li key={student.studentId}>
+                <button
+                  type="button"
+                  onClick={() => navigate('student-detail', { studentId: student.studentId })}
+                  className="flex w-full items-center justify-between rounded-lg bg-surface px-4 py-3 text-left hover:bg-surface-raised"
+                >
+                  <StudentRow student={student} />
+                </button>
+              </li>
             ))}
           </ul>
 
@@ -128,20 +136,14 @@ function StudentRow({ student }: { student: Enrollment }) {
   const eligible = student.attendancePct >= NUC_THRESHOLD
 
   return (
-    <li className="flex items-center justify-between rounded-lg px-4 py-3 bg-surface">
+    <>
       <span className="text-sm text-ink">{student.name}</span>
       <div className="flex items-center gap-3">
-        <span
-          className={`text-sm font-medium tabular-nums ${
-            eligible ? 'text-ink-muted' : 'text-danger'
-          }`}
-        >
+        <span className={`text-sm font-medium tabular-nums ${eligible ? 'text-ink-muted' : 'text-danger'}`}>
           {student.attendancePct}%
         </span>
-        <span className="text-xs text-ink-faint">
-          {eligible ? 'Eligible for exams' : 'Not eligible'}
-        </span>
+        <span className="text-xs text-ink-faint">{eligible ? 'Eligible for exams' : 'Not eligible'}</span>
       </div>
-    </li>
+    </>
   )
 }

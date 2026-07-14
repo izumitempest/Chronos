@@ -1,26 +1,31 @@
 import type { ReactNode } from 'react'
 import { useMandate } from '../store/MandateContext'
 import { MandateMark } from './MandateMark'
+import { PrototypeDisclaimer } from './shared/PrototypeDisclaimer'
+import { NavTabs } from './shared/NavTabs'
 import type { Role } from '../data/types'
-
-interface LayoutProps {
-  children: ReactNode
-  title?: string
-}
 
 const roleLabels: Record<Role, string> = {
   student: 'Student',
   lecturer: 'Lecturer',
-  admin: 'HOD',
+  hod: 'HOD',
+  dean: 'Dean',
+  admin: 'Admin',
 }
 
-export function Layout({ children, title }: LayoutProps) {
+interface LayoutProps {
+  children: ReactNode
+  showNav?: boolean
+  showDisclaimer?: boolean
+}
+
+export function Layout({ children, showNav = true, showDisclaimer = true }: LayoutProps) {
   const { state, goHome } = useMandate()
   const user = state.currentUser
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-3xl items-center justify-between border-b border-ink/[0.04] px-6 py-5">
+      <header className="mx-auto flex max-w-4xl items-center justify-between border-b border-ink/[0.04] px-6 py-5">
         <button
           type="button"
           onClick={goHome}
@@ -42,10 +47,9 @@ export function Layout({ children, title }: LayoutProps) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 pb-24 pt-10">
-        {title && (
-          <h1 className="mb-10 text-[1.75rem] font-medium tracking-tight text-ink">{title}</h1>
-        )}
+      <main className="mx-auto max-w-4xl px-6 pb-24 pt-8">
+        {showDisclaimer && <PrototypeDisclaimer />}
+        {showNav && <NavTabs />}
         {children}
       </main>
     </div>
