@@ -50,7 +50,8 @@ export function StudentView() {
   }
 
   return (
-    <Layout title="Today">
+    <Layout>
+      <h1 className="mb-10 text-[1.75rem] font-medium tracking-tight text-ink">Today</h1>
       {activeClass ? (
         <section className="mb-14">
           <div className="card-quiet mb-8">

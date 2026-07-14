@@ -1,6 +1,6 @@
 import { navForRole } from '../../navigation/pages'
 import { useMandate } from '../../store/MandateContext'
-import type { PageId } from '../../data/types'
+
 
 export function NavTabs() {
   const { state, page, navigate } = useMandate()

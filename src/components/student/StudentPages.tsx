@@ -8,7 +8,7 @@ import { isAtRisk } from '../../utils/reports'
 import type { AttendanceRecord } from '../../data/types'
 
 export function StudentDashboard() {
-  const { state, getStudentRecords, getCourseAttendance } = useMandate()
+  const { state, getCourseAttendance } = useMandate()
   const [checkedIn, setCheckedIn] = useState(false)
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null)
   const [disputingToday, setDisputingToday] = useState(false)

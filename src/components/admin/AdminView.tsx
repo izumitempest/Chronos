@@ -6,7 +6,8 @@ export function AdminView() {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
 
   return (
-    <Layout title="Computer Science">
+    <Layout>
+      <h1 className="mb-2 text-[1.75rem] font-medium text-ink">Computer Science</h1>
       <section className="mb-12">
         <h2 className="mb-1 text-lg font-medium text-ink">Department overview</h2>
         <p className="mb-6 text-sm text-ink-muted">

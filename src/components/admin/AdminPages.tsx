@@ -8,11 +8,11 @@ import { adminSectionsForRole } from '../../navigation/pages'
 import { EXCEL_TEMPLATES } from '../../data/constants'
 import { downloadTemplate } from '../../utils/reports'
 import { buildStudentReportRows } from '../../utils/reports'
-import type { CourseCatalogEntry, User } from '../../data/types'
+import type { User } from '../../data/types'
 import { NUC_THRESHOLD } from '../../data/types'
 
 export function AdminDashboard() {
-  const { state, thresholdSummaries } = useMandate()
+  const { state } = useMandate()
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
   const scopeLabel =
     state.currentUser.role === 'admin'

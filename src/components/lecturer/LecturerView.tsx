@@ -9,7 +9,8 @@ export function LecturerView() {
   const activeClass = state.classInstances.find((c) => c.status === 'active')
 
   return (
-    <Layout title="Today's class">
+    <Layout>
+      <h1 className="mb-10 text-[1.75rem] font-medium text-ink">Today's class</h1>
       {activeClass ? (
         <>
           <section className="mb-10">

@@ -76,7 +76,7 @@ export function buildStudentReportRows(
 
 export function buildDepartmentReportRows(
   enrollments: Record<string, Enrollment[]>,
-  courseTitles: Record<string, string>,
+  _courseTitles: Record<string, string>,
   department?: string,
 ) {
   const studentMap = new Map<string, Enrollment & { courses: { code: string; pct: number }[] }>()

@@ -15,29 +15,13 @@ interface LiveRosterProps {
 }
 
 export function LiveRoster({ courseCode, classInstanceId }: LiveRosterProps) {
-  const { state, demo, markPresentManually, fulfillLecturerRequest } = useMandate()
+  const { state, demo, markPresentManually } = useMandate()
   const [roster, setRoster] = useState<RosterEntry[]>([])
   const initialized = useRef(false)
 
   const students = state.enrollments[courseCode] ?? []
 
-  const pendingRequestIds = useMemo(
-    () =>
-      new Set(
-        state.lecturerRequests
-          .filter((r) => r.classInstanceId === classInstanceId && r.status === 'pending')
-          .map((r) => r.studentId),
-      ),
-    [state.lecturerRequests, classInstanceId],
-  )
 
-  const requestByStudent = useMemo(() => {
-    const map = new Map<string, string>()
-    state.lecturerRequests
-      .filter((r) => r.classInstanceId === classInstanceId && r.status === 'pending')
-      .forEach((r) => map.set(r.studentId, r.id))
-    return map
-  }, [state.lecturerRequests, classInstanceId])
 
   const checkedInIds = useMemo(
     () =>
