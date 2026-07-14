@@ -73,11 +73,11 @@ export function AdminReportsPage() {
       <p className="mb-8 text-sm text-ink-muted">Download Excel breakdowns or view on-screen lists.</p>
 
       <div className="space-y-3">
-        <ReportButton label="All students — attendance by course" onExport={() => exportReport('all-students')} onView={() => navigate('reports-view')} />
-        <ReportButton label="Students not on track (below threshold)" onExport={() => exportReport('at-risk')} />
-        <ReportButton label="Students above threshold" onExport={() => exportReport('above-threshold')} />
-        <ReportButton label="All students grouped by level & department" onExport={() => exportReport('by-department')} />
-        <ReportButton label="Students below threshold in any course" onExport={() => exportReport('below-any')} />
+        <ReportButton label="All students — attendance by course" onExport={() => exportReport('all-students')} onView={() => navigate('reports-view', { type: 'all-students' })} />
+        <ReportButton label="Students not on track (below threshold)" onExport={() => exportReport('at-risk')} onView={() => navigate('reports-view', { type: 'at-risk' })} />
+        <ReportButton label="Students above threshold" onExport={() => exportReport('above-threshold')} onView={() => navigate('reports-view', { type: 'above-threshold' })} />
+        <ReportButton label="All students grouped by level & department" onExport={() => exportReport('by-department')} onView={() => navigate('reports-view', { type: 'by-department' })} />
+        <ReportButton label="Students below threshold in any course" onExport={() => exportReport('below-any')} onView={() => navigate('reports-view', { type: 'below-any' })} />
       </div>
     </Layout>
   )
@@ -320,13 +320,49 @@ export function StudentDetailPage() {
 }
 
 export function ReportsViewPage() {
-  const { exportReport, scopedEnrollments, courseTitles } = useMandate()
-  const rows = buildStudentReportRows(scopedEnrollments, courseTitles, 'all')
+  const { page, exportReport, scopedEnrollments, courseTitles, navigate, state } = useMandate()
+  const type = page.params?.type ?? 'all-students'
+  
+  let rows: Record<string, string | number>[] = []
+  let title = 'Full attendance breakdown'
+
+  switch (type) {
+    case 'all-students':
+      rows = buildStudentReportRows(scopedEnrollments, courseTitles, 'all')
+      break
+    case 'on-track':
+      rows = buildStudentReportRows(scopedEnrollments, courseTitles, 'on-track')
+      title = 'Students on track'
+      break
+    case 'at-risk':
+      rows = buildStudentReportRows(scopedEnrollments, courseTitles, 'at-risk')
+      title = 'Students not on track'
+      break
+    case 'above-threshold':
+      rows = buildStudentReportRows(scopedEnrollments, courseTitles, 'above')
+      title = 'Students above threshold'
+      break
+    case 'by-department':
+      rows = buildDepartmentReportRows(scopedEnrollments, courseTitles, state.currentUser.department)
+      title = 'By level & department'
+      break
+    case 'below-any':
+      rows = buildDepartmentReportRows(scopedEnrollments, courseTitles).filter(
+        (r) => r['Below threshold in any course'] === 'Yes',
+      )
+      title = 'Below threshold in any course'
+      break
+    default:
+      rows = buildStudentReportRows(scopedEnrollments, courseTitles, 'all')
+  }
 
   return (
     <Layout showNav={false}>
-      <h1 className="mb-8 text-[1.75rem] font-medium text-ink">Full attendance breakdown</h1>
-      <button type="button" onClick={() => exportReport('all-students')} className="mb-6 rounded-lg bg-accent px-4 py-2 text-sm text-white">
+      <button type="button" onClick={() => navigate('reports')} className="mb-6 inline-flex rounded-xl bg-ink px-4 py-2 text-sm font-medium text-paper">
+        ← Back
+      </button>
+      <h1 className="mb-8 text-[1.75rem] font-medium text-ink">{title}</h1>
+      <button type="button" onClick={() => exportReport(type)} className="mb-6 rounded-lg bg-accent px-4 py-2 text-sm text-white">
         Download Excel
       </button>
       <div className="overflow-x-auto">

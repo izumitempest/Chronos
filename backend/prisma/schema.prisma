@@ -1,0 +1,197 @@
+// Mandate / Chronos — Prisma schema
+// Database: SQLite (swap to PostgreSQL by changing provider + DATABASE_URL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────
+
+model User {
+  id          String  @id @default(cuid())
+  role        String  // student | lecturer | hod | dean | admin
+  name        String
+  matric      String? @unique
+  staffId     String? @unique
+  department  String
+  faculty     String
+  level       String?
+  title       String?
+  adminScope  String? // department | faculty | institution
+
+  attendanceRecords   AttendanceRecord[]
+  lecturerRequests    LecturerRequest[]
+  classTimeProposals  ClassTimeProposal[]
+  lecturerAttendance  LecturerAttendanceRecord[]
+
+  enrollments Enrollment[]
+  coursesAsLecturer CourseLecturer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Courses ─────────────────────────────────────────────────────────
+
+model Course {
+  code       String @id
+  title      String
+  level      String
+  department String
+  faculty    String
+
+  lecturers     CourseLecturer[]
+  enrollments   Enrollment[]
+  classInstances ClassInstance[]
+  timetableSlots TimetableSlot[]
+  classTimeProposals ClassTimeProposal[]
+  lecturerAttendance LecturerAttendanceRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Join table for many-to-many Course ↔ Lecturer
+model CourseLecturer {
+  id         String @id @default(cuid())
+  courseCode String
+  userId     String
+
+  course Course @relation(fields: [courseCode], references: [code])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([courseCode, userId])
+}
+
+// ─── Enrollments ─────────────────────────────────────────────────────
+
+model Enrollment {
+  id            String @id @default(cuid())
+  studentId     String
+  courseCode    String
+  attendancePct Float  @default(0)
+  projectedPct  Float?
+
+  student User   @relation(fields: [studentId], references: [id])
+  course  Course @relation(fields: [courseCode], references: [code])
+
+  @@unique([studentId, courseCode])
+}
+
+// ─── Class Instances (individual lecture sessions) ───────────────────
+
+model ClassInstance {
+  id             String @id @default(cuid())
+  courseCode     String
+  venue          String
+  windowOpenAt   DateTime
+  windowCloseAt  DateTime
+  classStartAt   DateTime
+  attendanceMode String @default("window")
+  status         String @default("upcoming") // active | upcoming | closed
+
+  course Course @relation(fields: [courseCode], references: [code])
+
+  attendanceRecords AttendanceRecord[]
+  lecturerRequests  LecturerRequest[]
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Attendance Records ──────────────────────────────────────────────
+
+model AttendanceRecord {
+  id                 String  @id @default(cuid())
+  classInstanceId    String
+  studentId          String
+  presenceMethod     String  // autonomous_gaa | manual_student | manual_lecturer | lecturer_requested
+  verificationStatus String  @default("pending") // verified | unverified | disputed | manual | pending | missed
+  accuracyMetres     Float?
+  timestamp          DateTime @default(now())
+  disputeReason      String?
+  hodNote            String?
+
+  classInstance ClassInstance @relation(fields: [classInstanceId], references: [id])
+  student       User          @relation(fields: [studentId], references: [id])
+}
+
+// ─── Lecturer Requests ───────────────────────────────────────────────
+
+model LecturerRequest {
+  id              String   @id @default(cuid())
+  classInstanceId String
+  studentId       String
+  requestedAt     DateTime @default(now())
+  status          String   @default("pending") // pending | fulfilled | declined
+
+  classInstance ClassInstance @relation(fields: [classInstanceId], references: [id])
+  student       User          @relation(fields: [studentId], references: [id])
+}
+
+// ─── Timetable Slots ─────────────────────────────────────────────────
+
+model TimetableSlot {
+  id         String @id @default(cuid())
+  courseCode String
+  day        String // Monday–Friday
+  startTime  String
+  endTime    String
+  venue      String
+  level      String
+  department String
+
+  course Course @relation(fields: [courseCode], references: [code])
+}
+
+// ─── Lecturer Attendance (admin tracking) ────────────────────────────
+
+model LecturerAttendanceRecord {
+  id              String  @id @default(cuid())
+  courseCode      String
+  date            String
+  lecturerId      String
+  tookAttendance  Boolean @default(false)
+  onTime          Boolean @default(false)
+
+  course   Course @relation(fields: [courseCode], references: [code])
+  lecturer User   @relation(fields: [lecturerId], references: [id])
+}
+
+// ─── Class Time Proposals ────────────────────────────────────────────
+
+model ClassTimeProposal {
+  id           String   @id @default(cuid())
+  courseCode   String
+  proposedById String
+  proposedDay  String
+  proposedTime String
+  status       String   @default("pending") // pending | approved | declined
+  submittedAt  DateTime @default(now())
+
+  course     Course @relation(fields: [courseCode], references: [code])
+  proposedBy User   @relation(fields: [proposedById], references: [id])
+}
+
+// ─── Activity Log ────────────────────────────────────────────────────
+
+model ActivityEntry {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  message   String
+}
+
+// ─── Hierarchy (static config, seeded) ───────────────────────────────
+
+model HierarchyNode {
+  role           String  @id
+  label          String
+  canAccessApp   Boolean @default(true)
+  canAccessAdmin Boolean @default(false)
+  adminSections  String  @default("") // comma-separated
+  reportsTo      String?
+}

@@ -183,6 +183,7 @@ export type PageId =
   | 'dashboard'
   | 'courses'
   | 'calendar'
+  | 'past-classes'
   | 'timetable'
   | 'course-detail'
   | 'reports'

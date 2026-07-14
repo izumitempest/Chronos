@@ -1,4 +1,4 @@
-
+import { useState } from 'react'
 import { Layout } from '../Layout'
 import { LiveRoster } from './LiveRoster'
 import { ProposeClassTime } from './ProposeClassTime'
@@ -169,6 +169,72 @@ export function LecturerCoursePage() {
         <ReportButton label="Students not on track" onExport={() => exportReport('at-risk', courseCode)} />
         <ReportButton label="Students above threshold" onExport={() => exportReport('above-threshold', courseCode)} />
       </section>
+    </Layout>
+  )
+}
+
+export function LecturerPastClassesPage() {
+  const { state, navigate } = useMandate()
+  const [showInfo, setShowInfo] = useState<string | null>(null)
+  
+  const myPastClasses = state.lecturerAttendance.filter(
+    (l) => l.lecturerId === state.currentUser.id || l.lecturerName === state.currentUser.name
+  )
+
+  return (
+    <Layout>
+      <h1 className="mb-4 text-[1.75rem] font-medium text-ink">Past classes</h1>
+      <p className="mb-8 text-sm text-ink-muted">Recent lectures you were scheduled to take.</p>
+      
+      <div className="space-y-3">
+        {myPastClasses.map((c) => (
+          <div key={c.id}>
+            <button
+              type="button"
+              onClick={() => {
+                if (c.tookAttendance) {
+                  navigate('course-detail', { courseCode: c.courseCode })
+                }
+              }}
+              className={`w-full text-left rounded-xl px-4 py-3 transition-colors ${
+                !c.tookAttendance
+                  ? 'bg-danger-soft/40 cursor-default'
+                  : 'bg-surface hover:bg-surface-raised cursor-pointer'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-ink">{c.courseCode}</p>
+                  <p className="text-sm text-ink-muted">{c.date} · {c.courseTitle}</p>
+                </div>
+                {!c.tookAttendance ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowInfo(showInfo === c.id ? null : c.id)
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-danger/10 text-danger hover:bg-danger/20"
+                    title="Why is this red?"
+                  >
+                    i
+                  </button>
+                ) : (
+                  <span className="text-sm text-ink-faint">View →</span>
+                )}
+              </div>
+            </button>
+            {showInfo === c.id && !c.tookAttendance && (
+              <div className="mt-2 rounded-lg bg-surface px-4 py-3 text-sm text-ink-muted">
+                This class did not hold, or attendance was missed. No student attendance records exist for this session.
+              </div>
+            )}
+          </div>
+        ))}
+        {myPastClasses.length === 0 && (
+          <p className="text-sm text-ink-muted">No past classes found.</p>
+        )}
+      </div>
     </Layout>
   )
 }

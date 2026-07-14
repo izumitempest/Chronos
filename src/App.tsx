@@ -2,7 +2,7 @@ import { MandateProvider, useMandate } from './store/MandateContext'
 import { EntryScreen } from './components/EntryScreen'
 import { DemoControls } from './components/DemoControls'
 import { StudentDashboard, StudentCoursesPage, StudentCalendarPage } from './components/student/StudentPages'
-import { LecturerDashboard, LecturerTimetablePage, LecturerCoursePage } from './components/lecturer/LecturerPages'
+import { LecturerDashboard, LecturerTimetablePage, LecturerCoursePage, LecturerPastClassesPage } from './components/lecturer/LecturerPages'
 import {
   AdminDashboard,
   AdminReportsPage,
@@ -35,6 +35,8 @@ function RoleRouter() {
     switch (page.id) {
       case 'timetable':
         return <LecturerTimetablePage />
+      case 'past-classes':
+        return <LecturerPastClassesPage />
       case 'course-detail':
         return <LecturerCoursePage />
       case 'reports':

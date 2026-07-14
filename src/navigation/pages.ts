@@ -9,7 +9,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Today', roles: ['student', 'lecturer', 'hod', 'dean', 'admin'] },
   { id: 'courses', label: 'My courses', roles: ['student'] },
-  { id: 'calendar', label: 'Calendar', roles: ['student', 'lecturer'] },
+  { id: 'calendar', label: 'Calendar', roles: ['student'] },
+  { id: 'past-classes', label: 'Past classes', roles: ['lecturer'] },
   { id: 'timetable', label: 'Timetable', roles: ['lecturer'] },
   { id: 'reports', label: 'Reports', roles: ['lecturer', 'hod', 'dean', 'admin'] },
   { id: 'users', label: 'Users', roles: ['hod', 'dean', 'admin'] },

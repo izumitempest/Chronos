@@ -4,6 +4,7 @@ import {
   useContext,
   useMemo,
   useState,
+  useEffect,
   type ReactNode,
 } from 'react'
 import {
@@ -106,17 +107,26 @@ export function MandateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const navigate = useCallback((id: PageState['id'], params?: Record<string, string>) => {
+    window.history.pushState({ id, params }, '')
     setPageHistory((h) => [...h, page])
     setPage({ id, params })
   }, [page])
 
   const goBack = useCallback(() => {
-    setPageHistory((h) => {
-      const next = [...h]
-      const prev = next.pop()
-      if (prev) setPage(prev)
-      return next
-    })
+    window.history.back()
+  }, [])
+
+  useEffect(() => {
+    const handlePop = (e: PopStateEvent) => {
+      if (e.state && e.state.id) {
+        setPage(e.state)
+        setPageHistory((h) => h.slice(0, -1))
+      } else {
+        setPage({ id: 'dashboard' })
+      }
+    }
+    window.addEventListener('popstate', handlePop)
+    return () => window.removeEventListener('popstate', handlePop)
   }, [])
 
   const canGoBack = pageHistory.length > 0
