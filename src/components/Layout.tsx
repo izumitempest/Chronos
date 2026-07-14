@@ -20,7 +20,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children, showNav = true, showDisclaimer = true }: LayoutProps) {
-  const { state, goHome } = useMandate()
+  const { state, goHome, loading } = useMandate()
   const user = state.currentUser
 
   return (
@@ -50,7 +50,16 @@ export function Layout({ children, showNav = true, showDisclaimer = true }: Layo
       <main className="mx-auto max-w-4xl px-6 pb-24 pt-8">
         {showDisclaimer && <PrototypeDisclaimer />}
         {showNav && <NavTabs />}
-        {children}
+        {loading ? (
+          <div className="flex h-64 items-center justify-center animate-pulse-soft">
+            <div className="flex flex-col items-center gap-4">
+              <MandateMark size={32} className="text-accent/50" />
+              <p className="text-sm text-ink-faint">Loading dashboard data...</p>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
       </main>
     </div>
   )

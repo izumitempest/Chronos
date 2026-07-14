@@ -24,7 +24,6 @@ import type {
   ThresholdSummary,
   TimetableSlot,
   User,
-  VerificationStatus,
 } from '../data/types'
 import { NUC_THRESHOLD } from '../data/types'
 import {
@@ -89,9 +88,12 @@ export function MandateProvider({ children }: { children: ReactNode }) {
     if (!localStorage.getItem('mandate_token') || isAtHome) return
     setLoading(true)
     try {
-      const [coursesData, activeClassesData] = await Promise.all([
+      const me = await apiClient.get<User>('/users/me')
+      
+      const [coursesData, activeClassesData, attendanceData] = await Promise.all([
         apiClient.get<any[]>('/courses'),
         apiClient.get<any[]>('/classes/active'),
+        apiClient.get<AttendanceRecord[]>(`/attendance/records?studentId=${me.id}`),
       ])
 
       const courseCatalog = coursesData.map(c => ({
@@ -120,8 +122,10 @@ export function MandateProvider({ children }: { children: ReactNode }) {
 
       setState(prev => ({
         ...prev,
+        currentUser: me,
         courseCatalog,
         classInstances,
+        attendanceRecords: attendanceData,
       }))
     } catch (e) {
       console.error('Failed to load dashboard data:', e)
@@ -275,7 +279,7 @@ export function MandateProvider({ children }: { children: ReactNode }) {
   const disputeRecord = useCallback(
     async (recordId: string, reason: string) => {
       try {
-        const record = await apiClient.post<AttendanceRecord>('/attendance/dispute', { recordId, reason })
+        await apiClient.post<AttendanceRecord>('/attendance/dispute', { recordId, reason })
         setState((prev) => ({
           ...prev,
           attendanceRecords: prev.attendanceRecords.map((r) =>
