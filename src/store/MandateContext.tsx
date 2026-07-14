@@ -12,7 +12,6 @@ import {
   createInitialState,
   courseTitlesMap,
   filterEnrollmentsByScope,
-  users,
 } from '../data/seedData'
 import { defaultPageForRole } from '../navigation/pages'
 import type {
@@ -34,6 +33,7 @@ import {
   downloadExcel,
 } from '../utils/reports'
 import { uid } from '../utils/format'
+import { apiClient } from '../api/client'
 
 interface MandateContextValue {
   state: MandateState
@@ -44,19 +44,20 @@ interface MandateContextValue {
   courseTitles: Record<string, string>
   demo: DemoSettings
   canGoBack: boolean
+  loading: boolean
   setDemo: (settings: Partial<DemoSettings>) => void
   switchRole: (role: Role) => void
   goHome: () => void
   isAtHome: boolean
   navigate: (id: PageState['id'], params?: Record<string, string>) => void
   goBack: () => void
-  checkIn: (classInstanceId: string) => AttendanceRecord
-  manualCheckIn: (classInstanceId: string) => AttendanceRecord | null
-  requestLecturerMark: (classInstanceId: string) => void
-  disputeRecord: (recordId: string, reason: string) => void
-  resolveDispute: (recordId: string, note: string) => void
-  markPresentManually: (studentId: string, classInstanceId: string) => void
-  fulfillLecturerRequest: (requestId: string) => void
+  checkIn: (classInstanceId: string) => Promise<AttendanceRecord | null>
+  manualCheckIn: (classInstanceId: string) => Promise<AttendanceRecord | null>
+  requestLecturerMark: (classInstanceId: string) => Promise<void>
+  disputeRecord: (recordId: string, reason: string) => Promise<void>
+  resolveDispute: (recordId: string, note: string) => Promise<void>
+  markPresentManually: (studentId: string, classInstanceId: string) => Promise<void>
+  fulfillLecturerRequest: (requestId: string) => Promise<void>
   proposeClassTime: (courseCode: string, day: string, time: string) => void
   approveProposal: (proposalId: string) => void
   declineProposal: (proposalId: string) => void
@@ -78,10 +79,60 @@ export function MandateProvider({ children }: { children: ReactNode }) {
   const [isAtHome, setIsAtHome] = useState(true)
   const [page, setPage] = useState<PageState>({ id: 'dashboard' })
   const [pageHistory, setPageHistory] = useState<PageState[]>([])
+  const [loading, setLoading] = useState(false)
   const [demo, setDemoState] = useState<DemoSettings>({
     locationOutcome: 'verified',
     rosterSpeed: 'normal',
   })
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!localStorage.getItem('mandate_token') || isAtHome) return
+    setLoading(true)
+    try {
+      const [coursesData, activeClassesData] = await Promise.all([
+        apiClient.get<any[]>('/courses'),
+        apiClient.get<any[]>('/classes/active'),
+      ])
+
+      const courseCatalog = coursesData.map(c => ({
+        code: c.code,
+        title: c.title,
+        level: c.level,
+        department: c.department,
+        faculty: c.faculty,
+        lecturerIds: c.lecturers.map((l: any) => l.user.id),
+        lecturerNames: c.lecturers.map((l: any) => l.user.name),
+      }))
+
+      const classInstances = activeClassesData.map(ci => ({
+        id: ci.id,
+        courseCode: ci.courseCode,
+        courseTitle: ci.course?.title || ci.courseCode,
+        venue: ci.venue,
+        lecturer: 'Assigned Lecturer',
+        lecturerIds: [], 
+        windowOpenAt: ci.windowOpenAt,
+        windowCloseAt: ci.windowCloseAt,
+        classStartAt: ci.classStartAt,
+        attendanceMode: ci.attendanceMode,
+        status: ci.status,
+      }))
+
+      setState(prev => ({
+        ...prev,
+        courseCatalog,
+        classInstances,
+      }))
+    } catch (e) {
+      console.error('Failed to load dashboard data:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [isAtHome])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const scopedEnrollments = useMemo(
     () => filterEnrollmentsByScope(state.enrollments, state.currentUser),
@@ -131,14 +182,21 @@ export function MandateProvider({ children }: { children: ReactNode }) {
 
   const canGoBack = pageHistory.length > 0
 
-  const switchRole = useCallback((role: Role) => {
-    setState((prev) => ({
-      ...prev,
-      currentUser: users[role as keyof typeof users] ?? users.admin,
-    }))
-    setPage({ id: defaultPageForRole(role) })
-    setPageHistory([])
-    setIsAtHome(false)
+  const switchRole = useCallback(async (role: Role) => {
+    try {
+      const response = await apiClient.post<{ token: string; user: User }>('/auth/demo-switch', { role })
+      localStorage.setItem('mandate_token', response.token)
+      setState((prev) => ({
+        ...prev,
+        currentUser: response.user,
+      }))
+      setPage({ id: defaultPageForRole(role) })
+      setPageHistory([])
+      setIsAtHome(false)
+    } catch (error) {
+      console.error('Failed to switch role:', error)
+      alert('Backend API is not reachable. Ensure it is running on port 3001.')
+    }
   }, [])
 
   const goHome = useCallback(() => {
@@ -147,153 +205,117 @@ export function MandateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const checkIn = useCallback(
-    (classInstanceId: string): AttendanceRecord => {
-      const ci = state.classInstances.find((c) => c.id === classInstanceId)
-      const user = state.currentUser
+    async (classInstanceId: string): Promise<AttendanceRecord | null> => {
       const verified = demo.locationOutcome === 'verified'
-      const status: VerificationStatus = verified ? 'verified' : 'unverified'
-
-      const record: AttendanceRecord = {
-        id: uid('ar'),
-        classInstanceId,
-        courseCode: ci?.courseCode ?? '',
-        studentId: user.id,
-        studentName: user.name,
-        presenceMethod: 'autonomous_gaa',
-        verificationStatus: status,
-        accuracyMetres: verified ? 14 : 312,
-        timestamp: new Date().toISOString(),
-        disputeReason: null,
+      try {
+        const record = await apiClient.post<AttendanceRecord>('/attendance/check-in', {
+          classInstanceId,
+          accuracyMetres: verified ? 14 : 312,
+        })
+        setState((prev) => ({
+          ...prev,
+          attendanceRecords: [record, ...prev.attendanceRecords],
+        }))
+        return record
+      } catch (error) {
+        console.error('Check-in failed:', error)
+        return null
       }
-
-      setState((prev) => ({
-        ...prev,
-        attendanceRecords: [record, ...prev.attendanceRecords],
-        pendingSyncCount: Math.max(0, prev.pendingSyncCount - 1),
-      }))
-      addActivity(`${user.name} checked in to ${ci?.courseCode ?? 'class'} — ${verified ? 'location confirmed' : 'location unconfirmed'}`)
-      return record
     },
-    [state.classInstances, state.currentUser, demo.locationOutcome, addActivity],
+    [demo.locationOutcome],
   )
 
   const manualCheckIn = useCallback(
-    (classInstanceId: string): AttendanceRecord | null => {
+    async (classInstanceId: string): Promise<AttendanceRecord | null> => {
       if (demo.locationOutcome === 'manual_fail') return null
-      const ci = state.classInstances.find((c) => c.id === classInstanceId)
-      const user = state.currentUser
-      const record: AttendanceRecord = {
-        id: uid('ar'),
-        classInstanceId,
-        courseCode: ci?.courseCode ?? '',
-        studentId: user.id,
-        studentName: user.name,
-        presenceMethod: 'manual_student',
-        verificationStatus: 'manual',
-        accuracyMetres: null,
-        timestamp: new Date().toISOString(),
-        disputeReason: null,
+      try {
+        const record = await apiClient.post<AttendanceRecord>('/attendance/manual', {
+          classInstanceId,
+        })
+        setState((prev) => ({ ...prev, attendanceRecords: [record, ...prev.attendanceRecords] }))
+        return record
+      } catch (error) {
+        console.error('Manual check-in failed:', error)
+        return null
       }
-      setState((prev) => ({ ...prev, attendanceRecords: [record, ...prev.attendanceRecords] }))
-      addActivity(`${user.name} used in-app manual check-in for ${ci?.courseCode ?? 'class'}`)
-      return record
     },
-    [state.classInstances, state.currentUser, demo.locationOutcome, addActivity],
+    [demo.locationOutcome],
   )
 
   const requestLecturerMark = useCallback(
-    (classInstanceId: string) => {
-      const ci = state.classInstances.find((c) => c.id === classInstanceId)
-      const user = state.currentUser
-      const req = {
-        id: uid('lr'),
-        classInstanceId,
-        courseCode: ci?.courseCode ?? '',
-        studentId: user.id,
-        studentName: user.name,
-        requestedAt: new Date().toISOString(),
-        status: 'pending' as const,
+    async (classInstanceId: string) => {
+      try {
+        const req = await apiClient.post<any>('/attendance/request-lecturer', { classInstanceId })
+        setState((prev) => ({ ...prev, lecturerRequests: [req, ...prev.lecturerRequests] }))
+      } catch (error) {
+        console.error('Request lecturer mark failed:', error)
       }
-      setState((prev) => ({ ...prev, lecturerRequests: [req, ...prev.lecturerRequests] }))
-      addActivity(`${user.name} asked their lecturer to mark attendance for ${ci?.courseCode ?? 'class'}`)
     },
-    [state.classInstances, state.currentUser, addActivity],
+    [],
   )
 
   const fulfillLecturerRequest = useCallback(
-    (requestId: string) => {
-      const req = state.lecturerRequests.find((r) => r.id === requestId)
-      if (!req) return
-      const record: AttendanceRecord = {
-        id: uid('ar'),
-        classInstanceId: req.classInstanceId,
-        courseCode: req.courseCode,
-        studentId: req.studentId,
-        studentName: req.studentName,
-        presenceMethod: 'lecturer_requested',
-        verificationStatus: 'manual',
-        accuracyMetres: null,
-        timestamp: new Date().toISOString(),
-        disputeReason: null,
+    async (requestId: string) => {
+      try {
+        const response = await apiClient.post<any>('/attendance/fulfill-request', { requestId })
+        setState((prev) => ({
+          ...prev,
+          lecturerRequests: prev.lecturerRequests.map((r) =>
+            r.id === requestId ? { ...r, status: 'fulfilled' as const } : r,
+          ),
+          attendanceRecords: [response.record, ...prev.attendanceRecords],
+        }))
+      } catch (error) {
+        console.error('Fulfill request failed:', error)
       }
-      setState((prev) => ({
-        ...prev,
-        lecturerRequests: prev.lecturerRequests.map((r) =>
-          r.id === requestId ? { ...r, status: 'fulfilled' as const } : r,
-        ),
-        attendanceRecords: [record, ...prev.attendanceRecords],
-      }))
-      addActivity(`Lecturer marked ${req.studentName} present (forwarded request)`)
     },
-    [state.lecturerRequests, addActivity],
+    [],
   )
 
   const disputeRecord = useCallback(
-    (recordId: string, reason: string) => {
-      setState((prev) => ({
-        ...prev,
-        attendanceRecords: prev.attendanceRecords.map((r) =>
-          r.id === recordId ? { ...r, verificationStatus: 'disputed' as const, disputeReason: reason } : r,
-        ),
-      }))
-      addActivity(`${state.currentUser.name} disputed an attendance record`)
+    async (recordId: string, reason: string) => {
+      try {
+        const record = await apiClient.post<AttendanceRecord>('/attendance/dispute', { recordId, reason })
+        setState((prev) => ({
+          ...prev,
+          attendanceRecords: prev.attendanceRecords.map((r) =>
+            r.id === recordId ? { ...r, verificationStatus: 'disputed' as const, disputeReason: reason } : r,
+          ),
+        }))
+      } catch (error) {
+        console.error('Dispute failed:', error)
+      }
     },
-    [state.currentUser.name, addActivity],
+    [],
   )
 
   const resolveDispute = useCallback(
-    (recordId: string, note: string) => {
-      setState((prev) => ({
-        ...prev,
-        attendanceRecords: prev.attendanceRecords.map((r) =>
-          r.id === recordId ? { ...r, verificationStatus: 'verified' as const, hodNote: note } : r,
-        ),
-      }))
-      addActivity('HOD resolved a flagged attendance record')
+    async (recordId: string, note: string) => {
+      try {
+        await apiClient.post<AttendanceRecord>('/attendance/resolve-dispute', { recordId, note })
+        setState((prev) => ({
+          ...prev,
+          attendanceRecords: prev.attendanceRecords.map((r) =>
+            r.id === recordId ? { ...r, verificationStatus: 'verified' as const, hodNote: note } : r,
+          ),
+        }))
+      } catch (error) {
+        console.error('Resolve dispute failed:', error)
+      }
     },
-    [addActivity],
+    [],
   )
 
   const markPresentManually = useCallback(
-    (studentId: string, classInstanceId: string) => {
-      const student = Object.values(state.enrollments).flat().find((s) => s.studentId === studentId)
-      const ci = state.classInstances.find((c) => c.id === classInstanceId)
-      const record: AttendanceRecord = {
-        id: uid('ar'),
-        classInstanceId,
-        courseCode: ci?.courseCode ?? '',
-        studentId,
-        studentName: student?.name ?? 'Unknown',
-        presenceMethod: 'manual_lecturer',
-        verificationStatus: 'manual',
-        accuracyMetres: null,
-        timestamp: new Date().toISOString(),
-        disputeReason: null,
+    async (studentId: string, classInstanceId: string) => {
+      try {
+        const record = await apiClient.post<AttendanceRecord>('/attendance/mark-present', { studentId, classInstanceId })
+        setState((prev) => ({ ...prev, attendanceRecords: [record, ...prev.attendanceRecords] }))
+      } catch (error) {
+        console.error('Mark present manually failed:', error)
       }
-      setState((prev) => ({ ...prev, attendanceRecords: [record, ...prev.attendanceRecords] }))
-      addActivity(`${state.currentUser.name} marked ${student?.name ?? 'a student'} present`)
     },
-    [state.enrollments, state.classInstances, state.currentUser.name, addActivity],
+    [],
   )
 
   const proposeClassTime = useCallback(
@@ -470,6 +492,7 @@ export function MandateProvider({ children }: { children: ReactNode }) {
     courseTitles,
     demo,
     canGoBack,
+    loading,
     setDemo,
     switchRole,
     goHome,

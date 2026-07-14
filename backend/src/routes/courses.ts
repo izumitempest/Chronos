@@ -32,7 +32,7 @@ coursesRouter.get('/', async (req: AuthRequest, res: Response) => {
  */
 coursesRouter.get('/:code', async (req: AuthRequest, res: Response) => {
   const course = await prisma.course.findUnique({
-    where: { code: req.params.code },
+    where: { code: req.params.code as string },
     include: {
       lecturers: { include: { user: { select: { id: true, name: true } } } },
       enrollments: { include: { student: { select: { id: true, name: true, matric: true, level: true } } } },
@@ -72,7 +72,7 @@ coursesRouter.post('/', async (req: AuthRequest, res: Response) => {
  * DELETE /api/courses/:code
  */
 coursesRouter.delete('/:code', async (req: AuthRequest, res: Response) => {
-  await prisma.course.delete({ where: { code: req.params.code } })
+  await prisma.course.delete({ where: { code: req.params.code as string } })
   return res.json({ ok: true })
 })
 
@@ -82,7 +82,7 @@ coursesRouter.delete('/:code', async (req: AuthRequest, res: Response) => {
  */
 coursesRouter.get('/:code/enrollments', async (req: AuthRequest, res: Response) => {
   const enrollments = await prisma.enrollment.findMany({
-    where: { courseCode: req.params.code },
+    where: { courseCode: req.params.code as string },
     include: {
       student: { select: { id: true, name: true, matric: true, level: true, department: true, faculty: true } },
     },

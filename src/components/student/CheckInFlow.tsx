@@ -19,8 +19,8 @@ export function CheckInFlow({ classInstanceId, courseCode, onComplete }: CheckIn
 
   const handleAutoCheckIn = () => {
     setPhase('confirming')
-    setTimeout(() => {
-      const record = checkIn(classInstanceId)
+    setTimeout(async () => {
+      const record = await checkIn(classInstanceId)
       setResult(record)
       setPhase('done')
       onComplete(record)
@@ -29,8 +29,8 @@ export function CheckInFlow({ classInstanceId, courseCode, onComplete }: CheckIn
 
   const handleManual = () => {
     setPhase('manual')
-    setTimeout(() => {
-      const record = manualCheckIn(classInstanceId)
+    setTimeout(async () => {
+      const record = await manualCheckIn(classInstanceId)
       if (record) {
         setResult(record)
         setPhase('done')
