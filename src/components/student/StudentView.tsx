@@ -42,9 +42,9 @@ export function StudentView() {
   const courseAttendance = getCourseAttendance(studentId)
   const historyRecords = getStudentRecords(studentId).slice(0, 8)
 
-  const handleManual = () => {
+  const handleManual = async () => {
     if (!activeClass) return
-    const record = manualCheckIn(activeClass.id)
+    const record = await manualCheckIn(activeClass.id)
     setTodayRecord(record)
     setCheckedIn(true)
   }

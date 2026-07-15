@@ -189,8 +189,9 @@ export function LecturerPastClassesPage() {
       <div className="space-y-3">
         {myPastClasses.map((c) => (
           <div key={c.id}>
-            <button
-              type="button"
+            <div
+              role={c.tookAttendance ? 'button' : undefined}
+              tabIndex={c.tookAttendance ? 0 : undefined}
               onClick={() => {
                 if (c.tookAttendance) {
                   navigate('course-detail', { courseCode: c.courseCode })
@@ -223,7 +224,7 @@ export function LecturerPastClassesPage() {
                   <span className="text-sm text-ink-faint">View →</span>
                 )}
               </div>
-            </button>
+            </div>
             {showInfo === c.id && !c.tookAttendance && (
               <div className="mt-2 rounded-lg bg-surface px-4 py-3 text-sm text-ink-muted">
                 This class did not hold, or attendance was missed. No student attendance records exist for this session.

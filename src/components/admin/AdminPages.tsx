@@ -7,7 +7,7 @@ import { useMandate } from '../../store/MandateContext'
 import { adminSectionsForRole } from '../../navigation/pages'
 import { EXCEL_TEMPLATES } from '../../data/constants'
 import { downloadTemplate } from '../../utils/reports'
-import { buildStudentReportRows } from '../../utils/reports'
+import { buildStudentReportRows, buildDepartmentReportRows } from '../../utils/reports'
 import type { User } from '../../data/types'
 import { NUC_THRESHOLD } from '../../data/types'
 
@@ -348,7 +348,7 @@ export function ReportsViewPage() {
       break
     case 'below-any':
       rows = buildDepartmentReportRows(scopedEnrollments, courseTitles).filter(
-        (r) => r['Below threshold in any course'] === 'Yes',
+        (r: Record<string, string | number>) => r['Below threshold in any course'] === 'Yes',
       )
       title = 'Below threshold in any course'
       break
