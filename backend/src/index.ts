@@ -7,6 +7,9 @@ import { usersRouter } from './routes/users'
 import { coursesRouter } from './routes/courses'
 import { reportsRouter } from './routes/reports'
 import { authRouter } from './routes/auth'
+import { enrollmentsRouter } from './routes/enrollments'
+import { proposalsRouter } from './routes/proposals'
+import { timetableRouter } from './routes/timetable'
 import { authMiddleware } from './middleware/auth'
 
 dotenv.config()
@@ -31,6 +34,9 @@ app.use('/api/classes', authMiddleware, classesRouter)
 app.use('/api/users', authMiddleware, usersRouter)
 app.use('/api/courses', authMiddleware, coursesRouter)
 app.use('/api/reports', authMiddleware, reportsRouter)
+app.use('/api/enrollments', authMiddleware, enrollmentsRouter)
+app.use('/api/proposals', authMiddleware, proposalsRouter)
+app.use('/api/timetable', authMiddleware, timetableRouter)
 
 app.listen(PORT, () => {
   console.log(`Mandate API running on http://localhost:${PORT}`)

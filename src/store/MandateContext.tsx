@@ -90,10 +90,26 @@ export function MandateProvider({ children }: { children: ReactNode }) {
     try {
       const me = await apiClient.get<User>('/users/me')
       
-      const [coursesData, activeClassesData, attendanceData] = await Promise.all([
+      const [
+        coursesData,
+        activeClassesData,
+        attendanceData,
+        enrollmentsData,
+        thresholdsData,
+        activityData,
+        lecturerAttendanceData,
+        timetableData,
+        proposalsData,
+      ] = await Promise.all([
         apiClient.get<any[]>('/courses'),
         apiClient.get<any[]>('/classes/active'),
         apiClient.get<AttendanceRecord[]>(`/attendance/records?studentId=${me.id}`),
+        apiClient.get<any>('/enrollments/scoped'),
+        apiClient.get<any[]>('/reports/thresholds'),
+        apiClient.get<any[]>('/reports/activity-log'),
+        apiClient.get<any[]>('/reports/lecturer-attendance'),
+        apiClient.get<any[]>('/timetable'),
+        apiClient.get<any[]>('/proposals'),
       ])
 
       const courseCatalog = coursesData.map(c => ({
@@ -126,6 +142,11 @@ export function MandateProvider({ children }: { children: ReactNode }) {
         courseCatalog,
         classInstances,
         attendanceRecords: attendanceData,
+        enrollments: enrollmentsData,
+        activityLog: activityData,
+        lecturerAttendance: lecturerAttendanceData,
+        timetable: timetableData,
+        classTimeProposals: proposalsData,
       }))
     } catch (e) {
       console.error('Failed to load dashboard data:', e)
@@ -143,10 +164,11 @@ export function MandateProvider({ children }: { children: ReactNode }) {
     [state.enrollments, state.currentUser],
   )
 
-  const thresholdSummaries = useMemo(
-    () => computeThresholdSummaries(scopedEnrollments),
-    [scopedEnrollments],
-  )
+  const thresholdSummaries = useMemo(() => {
+    // We can still fallback to computeThresholdSummaries if data isn't loaded
+    // but we prefer to use state.thresholds from the backend once it's part of the state
+    return computeThresholdSummaries(scopedEnrollments)
+  }, [scopedEnrollments])
 
   const courseTitles = useMemo(() => courseTitlesMap(state.courseCatalog), [state.courseCatalog])
 
@@ -323,42 +345,49 @@ export function MandateProvider({ children }: { children: ReactNode }) {
   )
 
   const proposeClassTime = useCallback(
-    (courseCode: string, day: string, time: string) => {
-      setState((prev) => ({
-        ...prev,
-        classTimeProposals: [{
-          id: uid('ctp'),
-          courseCode,
-          proposedBy: state.currentUser.name,
-          proposedDay: day,
-          proposedTime: time,
-          status: 'pending',
-          submittedAt: new Date().toISOString(),
-        }, ...prev.classTimeProposals],
-      }))
-      addActivity(`${state.currentUser.name} proposed a new time for ${courseCode}`)
+    async (courseCode: string, day: string, time: string) => {
+      try {
+        const proposal = await apiClient.post<any>('/proposals', { courseCode, proposedDay: day, proposedTime: time })
+        setState((prev) => ({
+          ...prev,
+          classTimeProposals: [proposal, ...prev.classTimeProposals],
+        }))
+        addActivity(`${state.currentUser.name} proposed a new time for ${courseCode}`)
+      } catch (error) {
+        console.error('Propose class time failed:', error)
+      }
     },
     [state.currentUser.name, addActivity],
   )
 
-  const approveProposal = useCallback((proposalId: string) => {
-    setState((prev) => ({
-      ...prev,
-      classTimeProposals: prev.classTimeProposals.map((p) =>
-        p.id === proposalId ? { ...p, status: 'approved' as const } : p,
-      ),
-    }))
-    addActivity('HOD approved a class time proposal')
+  const approveProposal = useCallback(async (proposalId: string) => {
+    try {
+      const proposal = await apiClient.post<any>(`/proposals/${proposalId}/approve`, {})
+      setState((prev) => ({
+        ...prev,
+        classTimeProposals: prev.classTimeProposals.map((p) =>
+          p.id === proposalId ? { ...p, status: 'approved' as const } : p,
+        ),
+      }))
+      addActivity(`HOD approved a class time proposal for ${proposal.courseCode}`)
+    } catch (error) {
+      console.error('Approve proposal failed:', error)
+    }
   }, [addActivity])
 
-  const declineProposal = useCallback((proposalId: string) => {
-    setState((prev) => ({
-      ...prev,
-      classTimeProposals: prev.classTimeProposals.map((p) =>
-        p.id === proposalId ? { ...p, status: 'declined' as const } : p,
-      ),
-    }))
-    addActivity('HOD declined a class time proposal')
+  const declineProposal = useCallback(async (proposalId: string) => {
+    try {
+      const proposal = await apiClient.post<any>(`/proposals/${proposalId}/decline`, {})
+      setState((prev) => ({
+        ...prev,
+        classTimeProposals: prev.classTimeProposals.map((p) =>
+          p.id === proposalId ? { ...p, status: 'declined' as const } : p,
+        ),
+      }))
+      addActivity(`HOD declined a class time proposal for ${proposal.courseCode}`)
+    } catch (error) {
+      console.error('Decline proposal failed:', error)
+    }
   }, [addActivity])
 
   const getStudentRecords = useCallback(
@@ -446,41 +475,66 @@ export function MandateProvider({ children }: { children: ReactNode }) {
     [scopedEnrollments, courseTitles, state.currentUser.department, state.lecturerAttendance, addActivity],
   )
 
-  const addUser = useCallback((user: Omit<User, 'id'>) => {
-    setState((prev) => ({
-      ...prev,
-      users: [...prev.users, { ...user, id: uid('u') }],
-    }))
-    addActivity(`User added: ${user.name}`)
+  const addUser = useCallback(async (user: Omit<User, 'id'>) => {
+    try {
+      const newUser = await apiClient.post<User>('/users', user)
+      setState((prev) => ({
+        ...prev,
+        users: [...prev.users, newUser],
+      }))
+      addActivity(`User added: ${user.name}`)
+    } catch (error) {
+      console.error('Add user failed:', error)
+    }
   }, [addActivity])
 
-  const removeUser = useCallback((userId: string) => {
-    setState((prev) => ({
-      ...prev,
-      users: prev.users.filter((u) => u.id !== userId),
-    }))
-    addActivity('User removed')
+  const removeUser = useCallback(async (userId: string) => {
+    try {
+      await apiClient.delete(`/users/${userId}`)
+      setState((prev) => ({
+        ...prev,
+        users: prev.users.filter((u) => u.id !== userId),
+      }))
+      addActivity('User removed')
+    } catch (error) {
+      console.error('Remove user failed:', error)
+    }
   }, [addActivity])
 
-  const addCourse = useCallback((course: CourseCatalogEntry) => {
-    setState((prev) => ({
-      ...prev,
-      courseCatalog: [...prev.courseCatalog, course],
-    }))
-    addActivity(`Course added: ${course.code}`)
+  const addCourse = useCallback(async (course: CourseCatalogEntry) => {
+    try {
+      const newCourse = await apiClient.post<any>('/courses', course)
+      setState((prev) => ({
+        ...prev,
+        courseCatalog: [...prev.courseCatalog, newCourse],
+      }))
+      addActivity(`Course added: ${course.code}`)
+    } catch (error) {
+      console.error('Add course failed:', error)
+    }
   }, [addActivity])
 
-  const removeCourse = useCallback((code: string) => {
-    setState((prev) => ({
-      ...prev,
-      courseCatalog: prev.courseCatalog.filter((c) => c.code !== code),
-    }))
-    addActivity(`Course removed: ${code}`)
+  const removeCourse = useCallback(async (code: string) => {
+    try {
+      await apiClient.delete(`/courses/${code}`)
+      setState((prev) => ({
+        ...prev,
+        courseCatalog: prev.courseCatalog.filter((c) => c.code !== code),
+      }))
+      addActivity(`Course removed: ${code}`)
+    } catch (error) {
+      console.error('Remove course failed:', error)
+    }
   }, [addActivity])
 
-  const updateTimetable = useCallback((slots: TimetableSlot[]) => {
-    setState((prev) => ({ ...prev, timetable: slots }))
-    addActivity('Timetable updated')
+  const updateTimetable = useCallback(async (slots: TimetableSlot[]) => {
+    try {
+      const newSlots = await apiClient.put<any>('/timetable', slots)
+      setState((prev) => ({ ...prev, timetable: newSlots }))
+      addActivity('Timetable updated')
+    } catch (error) {
+      console.error('Update timetable failed:', error)
+    }
   }, [addActivity])
 
   const mockUploadUsers = useCallback(() => {
